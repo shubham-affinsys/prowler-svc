@@ -1,57 +1,48 @@
-# Base Python image
 FROM python:3.12-alpine
 
-# Maintainer information
-LABEL maintainer="https://github.com/shubham-affinsys/prowler-svc"
+LABEL maintainer="https://github.com/prowler-cloud/prowler"
 
 # Update system dependencies and install essential tools
-RUN apk --no-cache upgrade && \
-    apk --no-cache add curl git gcc python3-dev musl-dev linux-headers
+#hadolint ignore=DL3018
+RUN apk --no-cache upgrade && apk --no-cache add curl git
 
-# Create non-root user
+# Create nonroot user
 RUN mkdir -p /home/prowler && \
     echo 'prowler:x:1000:1000:prowler:/home/prowler:' > /etc/passwd && \
     echo 'prowler:x:1000:' > /etc/group && \
     chown -R prowler:prowler /home/prowler
-
-# Switch to the non-root user
 USER prowler
 
-# Set working directory
-WORKDIR /home/prowler
-
 # Copy necessary files
-COPY requirements.txt /home/prowler/requirements.txt
+WORKDIR /home/prowler
+COPY myauth/ /home/prowler/myauth/
 COPY prowler/  /home/prowler/prowler/
 COPY dashboard/ /home/prowler/dashboard/
-COPY myauth/ /home/prowler/myauth/
-COPY pyproject.toml /home/prowler/
-COPY README.md /home/prowler/
+COPY pyproject.toml /home/prowler
+COPY README.md /home/prowler
+RUN python -c "import sys; print(sys.path)"
 
-# Upgrade pip, setuptools, and wheel, then install project dependencies
+
+# Install Python dependencies
+ENV HOME='/home/prowler'
+ENV PATH="$HOME/.local/bin:$PATH"
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r /home/prowler/requirements.txt
+    pip install --no-cache-dir .
 
-# Add the local bin directory to PATH to ensure prowler command is available
-ENV PATH="/home/prowler/.local/bin:${PATH}"
-
-# Install the project, ensuring the prowler command is available
-RUN pip install --no-cache-dir . && \
-    echo "Prowler installed in: $(which prowler)"
-
-# Uninstall deprecated dash dependencies (if not used anymore)
+# Remove deprecated dash dependencies
 RUN pip uninstall dash-html-components -y && \
     pip uninstall dash-core-components -y
 
-# Switch back to the root user to clean up unnecessary files
+# Remove Prowler directory and build files
 USER 0
 RUN rm -rf /home/prowler/prowler /home/prowler/pyproject.toml /home/prowler/README.md /home/prowler/build /home/prowler/prowler.egg-info
 
-# Set environment variables for Auth0 (make sure to replace sensitive data with environment secrets in production)
+ENV AUTH0_CLIENT_ID=dAH2Ygr0Lk7m1LMJP6XxTI2HDnPpChud
+ENV AUTH0_CLIENT_SECRET=9DKDv0hObCbiLiFAajFqi2ciraC2pdg2M6MsUaupdsywXN4Popn3iVzu7MZo1grC
+ENV  AUTH0_DOMAIN=dev-bc7mwy7zlu55zrov.us.auth0.com
+ENV  APP_SECRET_KEY=my_secret
 
-
-# Switch back to the prowler user
 USER prowler
-
-# Entry point: run the Prowler dashboard
 ENTRYPOINT ["sh", "-c", "prowler dashboard"]
+
+RUN python -c "import sys; print(sys.path)"

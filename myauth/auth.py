@@ -84,6 +84,3 @@ def check_session():
         return jsonify({"logged_in": True, "user": session['user']})
     return jsonify({"logged_in": False})
 
-
-def is_user_logged_in():
-    return 'user' in session 
