@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  prowler:
+    build: .
+    env_file:
+      - .env
+    ports:
+      - "11666:11666"

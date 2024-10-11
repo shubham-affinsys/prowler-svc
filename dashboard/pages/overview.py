@@ -16,9 +16,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import callback, callback_context, ctx, dcc, html
 from dash.dependencies import Input, Output
-from myauth.auth import is_user_logged_in
-from flask import redirect,url_for
-
 # Config import
 from dashboard.config import (
     critical_color,
