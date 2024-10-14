@@ -113,7 +113,6 @@ def generate_help_menu():
 
     return menu_items
 
-from myauth.auth import is_user_logged_in
 from flask import redirect,url_for
 # Layout
 

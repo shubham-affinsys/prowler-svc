@@ -102,8 +102,6 @@ def load_csv_files(csv_files):
 
 data, results = load_csv_files(csv_files)
 
-
-from myauth.auth import is_user_logged_in
 from flask import redirect,url_for
 
 
