@@ -96,7 +96,6 @@ def prowler():
         # Initialize the Flask app
         app = dashboard.server  # Assuming your dashboard provides a Flask app instance
         app.secret_key = getenv("APP_SECRET_KEY")
-        print(f"secret key is {app.secret_key}")
         # Configure Auth0
         configure_auth(app)
         
