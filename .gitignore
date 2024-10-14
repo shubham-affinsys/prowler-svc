@@ -57,4 +57,3 @@ coverage*
 node_modules
 
 .venv
-venv

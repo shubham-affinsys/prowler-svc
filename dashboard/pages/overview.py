@@ -44,6 +44,7 @@ from dashboard.lib.dropdowns import (
     create_table_row_dropdown,
 )
 from dashboard.lib.layouts import create_layout_overview
+from myauth.auth import check_session 
 # Suppress warnings
 warnings.filterwarnings("ignore")
 

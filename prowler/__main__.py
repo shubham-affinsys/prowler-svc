@@ -75,7 +75,8 @@ from prowler.providers.common.provider import Provider
 from prowler.providers.common.quick_inventory import run_provider_quick_inventory
 from prowler.providers.gcp.models import GCPOutputOptions
 from prowler.providers.kubernetes.models import KubernetesOutputOptions
-
+from dotenv import load_dotenv
+load_dotenv()
 
 
 def prowler():
@@ -88,14 +89,14 @@ def prowler():
     if provider == "dashboard":
         from dashboard import DASHBOARD_ARGS
         from dashboard.__main__ import dashboard
-        from flask import Flask
-        from myauth.auth import auth_bp, configure_auth
-        import os
+        from flask import Flask, redirect , url_for, request
+        from myauth.auth import auth_bp, configure_auth, session
+        from os import getenv
 
         # Initialize the Flask app
         app = dashboard.server  # Assuming your dashboard provides a Flask app instance
-        app.secret_key = os.environ.get("APP_SECRET_KEY")
-
+        app.secret_key = getenv("APP_SECRET_KEY")
+        print(f"secret key is {app.secret_key}")
         # Configure Auth0
         configure_auth(app)
         
@@ -104,9 +105,6 @@ def prowler():
         print("auth registered")
 
         # Add a before_request hook to the Flask app (dashboard.server)
-        from flask import request, redirect, url_for
-        from myauth.auth import auth_bp, configure_auth, session
-
         @dashboard.server.before_request
         def log_request():
             print(f"Received request: {request.method} {request.path}")
