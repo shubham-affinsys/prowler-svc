@@ -55,7 +55,7 @@ dash-core-components==2.0.0
 dash-html-components==2.0.0
 dash-table==5.0.0
 Deprecated==1.2.14
-detect_secrets @ git+https://github.com/Yelp/detect-secrets.git@462720710ec337300fab2b4f2290949c7ee141eb
+detect_secrets
 dill==0.3.9
 dnspython==2.7.0
 docker==7.1.0
@@ -147,8 +147,6 @@ portalocker==2.10.1
 propcache==0.2.0
 proto-plus==1.24.0
 protobuf==5.28.2
--e git+https://github.com/shubham-affinsys/prowler-svc.git@1dc793b7de455772585764ca9379892d96acd450#egg=prowler
-psutil==6.0.0
 py-ocsf-models==0.2.0
 py-partiql-parser==0.5.6
 pyasn1==0.6.1
@@ -167,7 +165,6 @@ pytest-env==1.1.5
 pytest-randomly==3.15.0
 pytest-xdist==3.6.1
 python-dateutil==2.9.0.post0
-python-dotenv==1.0.1
 pytz==2024.2
 PyYAML==6.0.2
 referencing==0.35.1
@@ -197,7 +194,6 @@ stevedore==5.3.0
 sympy==1.13.3
 tabulate==0.9.0
 tenacity==9.0.0
-time-machine==2.16.0
 tldextract==5.1.2
 tomli==2.0.2
 tomlkit==0.13.2

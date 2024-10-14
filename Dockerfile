@@ -1,5 +1,10 @@
 FROM python:3.12-alpine
 
+RUN apk add --no-cache \
+    gcc \
+    musl-dev \
+    python3-dev \
+    linux-headers
 LABEL maintainer="https://github.com/prowler-cloud/prowler"
 
 # Update system dependencies and install essential tools
@@ -27,7 +32,7 @@ COPY README.md /home/prowler
 ENV HOME='/home/prowler'
 ENV PATH="$HOME/.local/bin:$PATH"
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -r requirements.txt  # Install from requirements.txt
+    pip install --no-cache-dir -r requirements.txt  
 
 # Remove deprecated dash dependencies
 RUN pip uninstall dash-html-components -y && \
@@ -44,4 +49,4 @@ ENV AUTH0_DOMAIN=dev-bc7mwy7zlu55zrov.us.auth0.com
 ENV APP_SECRET_KEY=my_secret
 
 USER prowler
-ENTRYPOINT ["python", "-m", "prowler"]  # Change this to the main entry point of your application
+ENTRYPOINT ["prowler dashboard"] 
