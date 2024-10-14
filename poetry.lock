@@ -2556,13 +2556,13 @@ dev = ["click", "codecov", "mkdocs-gen-files", "mkdocs-git-authors-plugin", "mkd
 
 [[package]]
 name = "mkdocs-material"
-version = "9.5.39"
+version = "9.5.40"
 description = "Documentation that simply works"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "mkdocs_material-9.5.39-py3-none-any.whl", hash = "sha256:0f2f68c8db89523cb4a59705cd01b4acd62b2f71218ccb67e1e004e560410d2b"},
-    {file = "mkdocs_material-9.5.39.tar.gz", hash = "sha256:25faa06142afa38549d2b781d475a86fb61de93189f532b88e69bf11e5e5c3be"},
+    {file = "mkdocs_material-9.5.40-py3-none-any.whl", hash = "sha256:8e7a16ada34e79a7b6459ff2602584222f522c738b6a023d1bea853d5049da6f"},
+    {file = "mkdocs_material-9.5.40.tar.gz", hash = "sha256:b69d70e667ec51fc41f65e006a3184dd00d95b2439d982cb1586e4c018943156"},
 ]
 
 [package.dependencies]
@@ -5213,4 +5213,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.9,<3.13"
-content-hash = "cbf37ac0744ad4b1a04736e967c22ad98ef99cd88dc56f7d8a3587de32a57a51"
+content-hash = "34b7add399c94d2bd74e024bac140f5a522527d5b863830d1ee9b2bd60a7bc6b"
