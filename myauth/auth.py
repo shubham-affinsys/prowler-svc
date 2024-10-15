@@ -3,6 +3,7 @@ from os import environ as env
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
 from flask import Blueprint, redirect, session, url_for, jsonify
+from werkzeug.exceptions import Unauthorized
 
 # Create a blueprint for authentication
 auth_bp = Blueprint('auth', __name__)
@@ -34,7 +35,7 @@ def configure_auth(app):
 #         })
 #     else:
 #         return jsonify({"message": "You need to log in"})
-    
+
 import secrets
 # Auth0 Login
 @auth_bp.route("/login")
@@ -44,20 +45,19 @@ def login():
     session['nonce'] = nonce  # Store it in the session
     return auth0.authorize_redirect(redirect_uri=url_for("auth.callback", _external=True),nonce=nonce)
 
-# Auth0 Callback
+# auth callback
 @auth_bp.route("/callback", methods=["GET", "POST"])
 def callback():
     print("callback")
-    token = auth0.authorize_access_token()
+    token = auth0.authorize_access_token()  # Fetch the OAuth token
     nonce = session.pop('nonce', None)
-    session["user"] = auth0.parse_id_token(token, nonce=nonce)
-    user = json.dumps(session["user"])
+    session["user"] = auth0.parse_id_token(token, nonce=nonce)  # Parse user info
+    user_info = session["user"]
 
     #FIX : sensitive info may be logged
-    print(f"User information after login:{user}",flush=True)
-    print(f"acces token is:{token}",flush=True)
-
-    return redirect("/")  # Redirect to your dashboard home
+    # If the email domain is allowed, proceed to redirect to dashboard
+    print(f"User logged in successfully ,user info : {user_info}", flush=True)
+    return redirect("/")  # Redirect to your dashboard
     # return redirect("https://prowler.bankbuddy.me")
 
 # Auth0 Logout
