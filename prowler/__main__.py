@@ -104,27 +104,29 @@ def prowler():
         print("auth registered")
 
         # Add a before_request hook to the Flask app (dashboard.server)
-        @dashboard.server.before_request
-        def log_request():
-            print(f"Received request: {request.method} {request.path}")
+        # @dashboard.server.before_request
+        try:
+            @app.before_request
+            def log_request():
+                print(f"Received request: {request.method} {request.path}",flush=True)
+                excluded_paths = [
+                    url_for('auth.login'),
+                    url_for('auth.callback'),
+                    '/auth/logout',
+                    '/assets/',  # Dash static files
+                    '/static/',   # Other static files
+                ]
 
-            excluded_paths = [
-                url_for('auth.login'),
-                url_for('auth.callback'),
-                '/auth/logout',
-                '/assets/',  # Dash static files
-                '/static/',   # Other static files
-            ]
+                # Skip validation for excluded paths
+                if any(request.path.startswith(path) for path in excluded_paths):
+                    return
 
-            # Skip validation for excluded paths
-            if any(request.path.startswith(path) for path in excluded_paths):
-                return
-
-            # Check if the user is logged in
-            if 'user' not in session:
-                print("User not logged in. Redirecting to login.")
-                return redirect(url_for('auth.login'))
-
+                # Check if the user is logged in
+                if 'user' not in session:
+                    print("User not logged in. Redirecting to login.",flush=True)
+                    return redirect(url_for('auth.login'))
+        except Exception as e:
+            print(f"error while auth :{e}",flush=True)
         sys.exit(dashboard.run(**DASHBOARD_ARGS))
 
     checks = args.check
@@ -165,7 +167,6 @@ def prowler():
     if args.list_services:
         print_services(list_services(provider))
         sys.exit()
-
     if args.list_fixer:
         print_fixers(list_fixers(provider))
         sys.exit()

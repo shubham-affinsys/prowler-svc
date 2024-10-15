@@ -53,8 +53,9 @@ def callback():
     session["user"] = auth0.parse_id_token(token, nonce=nonce)
     user = json.dumps(session["user"])
 
-    print(f"User information after login:{user}")
-    print(f"acces token is:{token}")
+    #FIX : sensitive info may be logged
+    print(f"User information after login:{user}",flush=True)
+    print(f"acces token is:{token}",flush=True)
 
     return redirect("/")  # Redirect to your dashboard home
     # return redirect("https://prowler.bankbuddy.me")
@@ -63,10 +64,11 @@ def callback():
 @auth_bp.route("/logout")
 def logout():
     user_info = session.get('user', None)
-    print(f"Logging out user: {user_info}")  # Print user info before logging out
+    #FIX : sensitive info may be logged
+    print(f"Logging out user: {user_info}",flush=True)  # Print user info before logging out
 
     session.clear()
-    print("logout")
+    print("logout",flush=True)
     return redirect(
         "https://"
         + env.get("AUTH0_DOMAIN")
