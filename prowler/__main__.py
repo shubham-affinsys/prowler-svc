@@ -331,7 +331,8 @@ def prowler():
                 )
         else:
             print(f"{Style.BRIGHT}{Fore.GREEN}\nNo findings to fix!{Style.RESET_ALL}\n")
-        sys.exit()
+    print(f"scan success11 {provider}")
+    sys.exit(0)
 
     # Extract findings stats
     stats = extract_findings_statistics(findings)
@@ -357,6 +358,8 @@ def prowler():
                 "Slack integration needs SLACK_API_TOKEN and SLACK_CHANNEL_NAME environment variables (see more in https://docs.prowler.cloud/en/latest/tutorials/integrations/#slack)."
             )
             sys.exit(1)
+    print(f"scan success10 {provider}")
+    sys.exit(0)
 
     # Outputs
     # TODO: this part is needed since the checks generates a Check_Report_XXX and the output uses Finding
@@ -412,6 +415,8 @@ def prowler():
                 html_output.batch_write_data_to_file(
                     provider=global_provider, stats=stats
                 )
+            print(f"scan success9 {provider}")
+            sys.exit(0)
 
     # Compliance Frameworks
     input_compliance_frameworks = set(output_options.output_modes).intersection(
@@ -516,6 +521,8 @@ def prowler():
                 )
                 generated_outputs["compliance"].append(generic_compliance)
                 generic_compliance.batch_write_data_to_file()
+            print(f"scan success8 {provider}")
+            sys.exit(0)
 
     elif provider == "azure":
         for compliance_name in input_compliance_frameworks:
@@ -560,6 +567,8 @@ def prowler():
                 )
                 generated_outputs["compliance"].append(generic_compliance)
                 generic_compliance.batch_write_data_to_file()
+            print(f"scan success7 {provider}")
+            sys.exit(0)
 
     elif provider == "gcp":
         for compliance_name in input_compliance_frameworks:
@@ -604,6 +613,8 @@ def prowler():
                 )
                 generated_outputs["compliance"].append(generic_compliance)
                 generic_compliance.batch_write_data_to_file()
+            print(f"scan success6 {provider}")
+            sys.exit(0)
 
     elif provider == "kubernetes":
         for compliance_name in input_compliance_frameworks:
@@ -634,6 +645,8 @@ def prowler():
                 )
                 generated_outputs["compliance"].append(generic_compliance)
                 generic_compliance.batch_write_data_to_file()
+            print(f"scan success5 {provider}")
+            sys.exit(0)
 
     # AWS Security Hub Integration
     if provider == "aws":
@@ -687,6 +700,10 @@ def prowler():
                 print(
                     f"{Style.BRIGHT}{Fore.GREEN}\n{findings_archived_in_security_hub} findings archived in AWS Security Hub!{Style.RESET_ALL}"
                 )
+                print(f"scan success3 {provider}")
+                sys.exit(0)
+            print(f"scan success4 {provider}")
+            sys.exit(0)
 
     # Display summary table
     if not args.only_logs:
@@ -720,6 +737,8 @@ def prowler():
                 print(
                     f"\nDetailed compliance results are in {Fore.YELLOW}{output_options.output_directory}/compliance/{Style.RESET_ALL}\n"
                 )
+            print(f"scan success2 {provider}")
+            sys.exit(0)
 
     # If custom checks were passed, remove the modules
     if checks_folder:
@@ -732,6 +751,9 @@ def prowler():
         and not stats["all_fails_are_muted"]
     ):
         sys.exit(3)
+    else :
+        print(f"scan success1 {provider}")
+        sys.exit(0)
 
 
 if __name__ == "__main__":

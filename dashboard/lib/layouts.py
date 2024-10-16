@@ -31,6 +31,7 @@ def create_layout_overview(
                         "Scan Overview",
                         className="text-prowler-stone-900 text-2xxl font-bold",
                     ),
+                    # html.Div(className="d-flex flex-wrap", id="logout_card"),
                 ],
                 className="flex justify-between border-b border-prowler-500 pb-3",
             ),
