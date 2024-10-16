@@ -53,7 +53,7 @@ def callback():
     nonce = session.pop('nonce', None)
     session["user"] = auth0.parse_id_token(token, nonce=nonce)  # Parse user info
     user_info = session["user"]
-
+    print(f"sesion details are: {session}")
     #FIX : sensitive info may be logged
     # If the email domain is allowed, proceed to redirect to dashboard
     print(f"User logged in successfully ,user info : {user_info}", flush=True)
@@ -68,7 +68,7 @@ def logout():
     print(f"Logging out user: {user_info}",flush=True)  # Print user info before logging out
 
     session.clear()
-    print("logout",flush=True)
+    print("user logged out redirecting to login page",flush=True)
     return redirect(
         "https://"
         + env.get("AUTH0_DOMAIN")

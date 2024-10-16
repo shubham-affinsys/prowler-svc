@@ -143,6 +143,7 @@ dashboard.layout = html.Div(
 
 
 
+
 # Callback to update navigation bar
 @dashboard.callback(Output("navigation-bar", "children"), [Input("url", "pathname")])
 def update_nav_bar(pathname):
@@ -157,22 +158,22 @@ def update_nav_bar(pathname):
                 [html.Ul(generate_nav_links(pathname), className="")],
                 className="flex flex-col gap-y-6",
             ),
+            #logout button on navbar
             html.Nav(
                 [
-                    #FIX: page not found when try to implement logout button here 
-                    # html.A(
-                    #     [
-                    #         html.Span(
-                    #             [
-                    #                 html.Img(src="assets/favicon.ico", className="w-5"),
-                    #                 "Logout",
-                    #             ],
-                    #             className="flex items-center gap-x-3 text-white",
-                    #         ),
-                    #     ],
-                    #     href="http://127.0.0.1:11666/auth/logout/",
-                    #     className="block p-3 uppercase text-xs hover:bg-prowler-stone-950 hover:border-r-4 hover:border-solid hover:border-prowler-lime",
-                    # ),
+                    html.A(
+                        [
+                            html.Span(
+                                [
+                                    html.Img(src="assets/favicon.ico", className="w-5"),
+                                    "Logout",
+                                ],
+                                className="flex items-center gap-x-3 text-white",
+                            ),
+                        ],
+                        href="https://prowler.bankbuddy.me/auth/logout",
+                        className="block p-3 uppercase text-xs hover:bg-prowler-stone-950 hover:border-r-4 hover:border-solid hover:border-prowler-lime",
+                    ),
                     html.Ul(generate_help_menu(), className=""),
                 ],
                 className="flex flex-col gap-y-6 mt-auto",
