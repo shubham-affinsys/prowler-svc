@@ -16,6 +16,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import callback, callback_context, ctx, dcc, html
 from dash.dependencies import Input, Output
+
 # Config import
 from dashboard.config import (
     critical_color,
@@ -44,13 +45,12 @@ from dashboard.lib.dropdowns import (
     create_table_row_dropdown,
 )
 from dashboard.lib.layouts import create_layout_overview
+
 # Suppress warnings
 warnings.filterwarnings("ignore")
 
 # Global variables
 # TODO: Create a flag to let the user put a custom path
-
-
 csv_files = []
 
 for file in glob.glob(os.path.join(folder_path_overview, "*.csv")):
@@ -93,363 +93,368 @@ def load_csv_files(csv_files):
 
 
 data = load_csv_files(csv_files)
+
 if data is None:
-        # Initializing the Dash App
-        dash.register_page(__name__, path="/")
-        layout = html.Div(
-            [
-                html.H1(
-                    "No data available",
-                    className="text-prowler-stone-900 text-2xxl font-bold",
-                ),
-                html.Div(className="flex justify-between border-b border-prowler-500 pb-3"),
-                html.Div(
-                    [
-                        html.Div(
-                            "Check the data folder to see if the files are in the correct format",
-                            className="text-prowler-stone-900 text-lg font-bold",
-                        )
-                    ],
-                    className="grid gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-0",
-                ),
-            ]
-        )
-else:
-        # This handles the case where we are using v3 outputs
-        if "ASSESSMENT_START_TIME" in data.columns:
-            data["ASSESSMENT_START_TIME"] = data["ASSESSMENT_START_TIME"].str.replace(
-                "T", " "
-            )
-            data.rename(columns={"ASSESSMENT_START_TIME": "TIMESTAMP_AUX"}, inplace=True)
-            # Unify the columns
-            data["TIMESTAMP"] = data.apply(
-                lambda x: (
-                    x["TIMESTAMP_AUX"] if pd.isnull(x["TIMESTAMP"]) else x["TIMESTAMP"]
-                ),
-                axis=1,
-            )
-        if "ACCOUNT_ID" in data.columns:
-            data.rename(columns={"ACCOUNT_ID": "ACCOUNT_UID_AUX"}, inplace=True)
-            data["ACCOUNT_UID"] = data.apply(
-                lambda x: (
-                    x["ACCOUNT_UID_AUX"]
-                    if pd.isnull(x["ACCOUNT_UID"])
-                    else x["ACCOUNT_UID"]
-                ),
-                axis=1,
-            )
-        # Rename the column RESOURCE_ID to RESOURCE_UID
-        if "RESOURCE_ID" in data.columns:
-            data.rename(columns={"RESOURCE_ID": "RESOURCE_UID_AUX"}, inplace=True)
-            data["RESOURCE_UID"] = data.apply(
-                lambda x: (
-                    x["RESOURCE_UID_AUX"]
-                    if pd.isnull(x["RESOURCE_UID"])
-                    else x["RESOURCE_UID"]
-                ),
-                axis=1,
-            )
-        # Rename the column "SUBSCRIPTION" to "ACCOUNT_UID"
-        if "SUBSCRIPTION" in data.columns:
-            data.rename(columns={"SUBSCRIPTION": "ACCOUNT_UID_AUX"}, inplace=True)
-            data["ACCOUNT_UID"] = data.apply(
-                lambda x: (
-                    x["ACCOUNT_UID_AUX"]
-                    if pd.isnull(x["ACCOUNT_UID"])
-                    else x["ACCOUNT_UID"]
-                ),
-                axis=1,
-            )
+    # Initializing the Dash App
+    dash.register_page(__name__, path="/")
 
-        # For the timestamp, remove the two columns and keep only the date
-
-        data["TIMESTAMP"] = pd.to_datetime(data["TIMESTAMP"])
-        data["ASSESSMENT_TIME"] = data["TIMESTAMP"].dt.strftime("%Y-%m-%d %H:%M:%S")
-        data_valid = pd.DataFrame()
-        for account in data["ACCOUNT_UID"].unique():
-            all_times = data[data["ACCOUNT_UID"] == account]["ASSESSMENT_TIME"].unique()
-            all_times.sort()
-            all_times = all_times[::-1]
-            times = []
-            # select the last ASSESSMENT_TIME in the day for each account
-            for time in all_times:
-                if time.split(" ")[0] not in [
-                    times[i].split(" ")[0] for i in range(len(times))
-                ]:
-                    times.append(time)
-            # select the data from the last ASSESSMENT_TIME of the day
-            data_valid = pd.concat(
-                [
-                    data_valid,
-                    data[
-                        (data["ACCOUNT_UID"] == account)
-                        & (data["ASSESSMENT_TIME"].isin(times))
-                    ],
-                ]
-            )
-        data = data_valid
-        # Select only the day in the data
-        data["ASSESSMENT_TIME"] = data["ASSESSMENT_TIME"].apply(lambda x: x.split(" ")[0])
-
-        data["TIMESTAMP"] = data["TIMESTAMP"].dt.strftime("%Y-%m-%d")
-        data["TIMESTAMP"] = pd.to_datetime(data["TIMESTAMP"])
-
-        # Assessment Date Dropdown
-        assesment_times = list(data["ASSESSMENT_TIME"].unique())
-        assesment_times.sort()
-        assesment_times.reverse()
-        date_dropdown = create_date_dropdown(assesment_times)
-
-        # Cloud Account Dropdown
-        accounts = []
-        if "ACCOUNT_NAME" in data.columns:
-            for account in data["ACCOUNT_NAME"].unique():
-                if "azure" in list(data[data["ACCOUNT_NAME"] == account]["PROVIDER"]):
-                    accounts.append(account + " - AZURE")
-                if "gcp" in list(data[data["ACCOUNT_NAME"] == account]["PROVIDER"]):
-                    accounts.append(account + " - GCP")
-
-        if "ACCOUNT_UID" in data.columns:
-            for account in data["ACCOUNT_UID"].unique():
-                if "aws" in list(data[data["ACCOUNT_UID"] == account]["PROVIDER"]):
-                    accounts.append(account + " - AWS")
-                if "kubernetes" in list(data[data["ACCOUNT_UID"] == account]["PROVIDER"]):
-                    accounts.append(account + " - K8S")
-
-        account_dropdown = create_account_dropdown(accounts)
-
-        # Region Dropdown
-        # Handle the case where there is location column
-        if "LOCATION" in data.columns:
-            data["REGION"] = data["LOCATION"]
-        # Handle the case where there is no region column
-        if "REGION" not in data.columns:
-            data["REGION"] = "-"
-        # Handle the case where the region is null
-        data["REGION"].fillna("-")
-        regions = ["All"] + list(data["REGION"].unique())
-        regions = [x for x in regions if str(x) != "nan" and x.__class__.__name__ == "str"]
-        # Correct the values
-        options = []
-        for value in regions:
-            if " " in value:
-                options.append(value.split(" ")[1])
-            else:
-                options.append(value)
-        regions = options
-        region_dropdown = create_region_dropdown(regions)
-
-        # Severity Dropdown
-        severity = ["All"] + list(data["SEVERITY"].unique())
-        severity = [
-            x for x in severity if str(x) != "nan" and x.__class__.__name__ == "str"
-        ]
-
-        severity_dropdown = create_severity_dropdown(severity)
-
-        # Service Dropdown
-        services = []
-        for service in data["SERVICE_NAME"].unique():
-            if "aws" in list(data[data["SERVICE_NAME"] == service]["PROVIDER"]):
-                services.append(service + " - AWS")
-            if "kubernetes" in list(data[data["SERVICE_NAME"] == service]["PROVIDER"]):
-                services.append(service + " - K8S")
-            if "azure" in list(data[data["SERVICE_NAME"] == service]["PROVIDER"]):
-                services.append(service + " - AZURE")
-            if "gcp" in list(data[data["SERVICE_NAME"] == service]["PROVIDER"]):
-                services.append(service + " - GCP")
-
-        services = ["All"] + services
-        services = [
-            x for x in services if str(x) != "nan" and x.__class__.__name__ == "str"
-        ]
-
-        service_dropdown = create_service_dropdown(services)
-
-        # Create the download button
-        download_button_csv = html.Button(
-            "Download this table as CSV",
-            id="download_link_csv",
-            n_clicks=0,
-            className="border-solid border-2 border-prowler-stone-900/10 hover:border-solid hover:border-2 hover:border-prowler-stone-900/10 text-prowler-stone-900 inline-block px-4 py-2 text-xs font-bold uppercase transition-all rounded-lg text-gray-900 hover:bg-prowler-stone-900/10 flex justify-end w-fit",
-        )
-        download_button_xlsx = html.Button(
-            "Download this table as XLSX",
-            id="download_link_xlsx",
-            n_clicks=0,
-            className="border-solid border-2 border-prowler-stone-900/10 hover:border-solid hover:border-2 hover:border-prowler-stone-900/10 text-prowler-stone-900 inline-block px-4 py-2 text-xs font-bold uppercase transition-all rounded-lg text-gray-900 hover:bg-prowler-stone-900/10 flex justify-end w-fit",
-        )
-
-        # Create the table row dropdown
-        table_row_values = [-1]
-        table_row_dropdown = create_table_row_dropdown(table_row_values)
-
-        # Create the status dropdown
-        status = ["All"] + list(data["STATUS"].unique())
-        status = [x for x in status if str(x) != "nan" and x.__class__.__name__ == "str"]
-
-        status_dropdown = create_status_dropdown(status)
-        table_div_header = []
-        table_div_header.append(
+    layout = html.Div(
+        [
+            html.H1(
+                "No data available",
+                className="text-prowler-stone-900 text-2xxl font-bold",
+            ),
+            html.Div(className="flex justify-between border-b border-prowler-500 pb-3"),
             html.Div(
                 [
                     html.Div(
-                        [
-                            html.Span(
-                                "Check Name",
-                                className="text-prowler-stone-900 uppercase text-sm xl:text-md font-bold",
-                            ),
-                            html.Button(
-                                html.Img(
-                                    src="assets/images/icons/arrows.svg",
-                                    style={
-                                        "width": "1rem",
-                                        "height": "1rem",
-                                        "margin-left": "0.2rem",
-                                        "margin-top": "0.2rem",
-                                    },
-                                ),
-                                id="sort_button_check_name",
-                                n_clicks=0,
-                            ),
-                        ],
-                        className="w-[40.5%] 2xl:w-[71.5%]",
-                    ),
-                    html.Div(
-                        [
-                            html.Span(
-                                "Severity",
-                                className="text-prowler-stone-900 uppercase text-sm xl:text-md font-bold",
-                            ),
-                            html.Button(
-                                html.Img(
-                                    src="assets/images/icons/arrows.svg",
-                                    style={
-                                        "width": "1rem",
-                                        "height": "1rem",
-                                        "margin-left": "0.2rem",
-                                        "margin-top": "0.2rem",
-                                    },
-                                ),
-                                id="sort_button_severity",
-                                n_clicks=0,
-                            ),
-                        ],
-                        className="w-[11%] 2xl:w-[15.5%]",
-                    ),
-                    html.Div(
-                        [
-                            html.Span(
-                                "Status",
-                                className="text-prowler-stone-900 uppercase text-sm xl:text-md font-bold",
-                            ),
-                            html.Button(
-                                html.Img(
-                                    src="assets/images/icons/arrows.svg",
-                                    style={
-                                        "width": "1rem",
-                                        "height": "1rem",
-                                        "margin-left": "0.2rem",
-                                        "margin-top": "0.2rem",
-                                    },
-                                ),
-                                id="sort_button_status",
-                                n_clicks=0,
-                            ),
-                        ],
-                        className="w-[9%] 2xl:w-[12.5%]",
-                    ),
-                    html.Div(
-                        [
-                            html.Span(
-                                "Region",
-                                className="text-prowler-stone-900 uppercase text-sm xl:text-md font-bold",
-                            ),
-                            html.Button(
-                                html.Img(
-                                    src="assets/images/icons/arrows.svg",
-                                    style={
-                                        "width": "1rem",
-                                        "height": "1rem",
-                                        "margin-left": "0.2rem",
-                                        "margin-top": "0.2rem",
-                                    },
-                                ),
-                                id="sort_button_region",
-                                n_clicks=0,
-                            ),
-                        ],
-                        className="w-[10%] 2xl:w-[14%]",
-                    ),
-                    html.Div(
-                        [
-                            html.Span(
-                                "Service",
-                                className="text-prowler-stone-900 uppercase text-sm xl:text-md font-bold",
-                            ),
-                            html.Button(
-                                html.Img(
-                                    src="assets/images/icons/arrows.svg",
-                                    style={
-                                        "width": "1rem",
-                                        "height": "1rem",
-                                        "margin-left": "0.2rem",
-                                        "margin-top": "0.2rem",
-                                    },
-                                ),
-                                id="sort_button_service",
-                                n_clicks=0,
-                            ),
-                        ],
-                        className="w-[13.5%] 2xl:w-[14%]",
-                    ),
-                    html.Div(
-                        [
-                            html.Span(
-                                "Account",
-                                className="text-prowler-stone-900 uppercase text-sm xl:text-md font-bold",
-                            ),
-                            html.Button(
-                                html.Img(
-                                    src="assets/images/icons/arrows.svg",
-                                    style={
-                                        "width": "1rem",
-                                        "height": "1rem",
-                                        "margin-left": "0.2rem",
-                                        "margin-top": "0.2rem",
-                                    },
-                                ),
-                                id="sort_button_account",
-                                n_clicks=0,
-                            ),
-                        ],
-                        className="w-[15%] 2xl:w-[15.5%]",
-                    ),
+                        "Check the data folder to see if the files are in the correct format",
+                        className="text-prowler-stone-900 text-lg font-bold",
+                    )
                 ],
-                className="grid grid-cols-auto w-full",
-                style={
-                    "display": "flex",
-                },
-            )
+                className="grid gap-x-4 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-0",
+            ),
+        ]
+    )
+else:
+
+    # This handles the case where we are using v3 outputs
+    if "ASSESSMENT_START_TIME" in data.columns:
+        data["ASSESSMENT_START_TIME"] = data["ASSESSMENT_START_TIME"].str.replace(
+            "T", " "
+        )
+        data.rename(columns={"ASSESSMENT_START_TIME": "TIMESTAMP_AUX"}, inplace=True)
+        # Unify the columns
+        data["TIMESTAMP"] = data.apply(
+            lambda x: (
+                x["TIMESTAMP_AUX"] if pd.isnull(x["TIMESTAMP"]) else x["TIMESTAMP"]
+            ),
+            axis=1,
+        )
+    if "ACCOUNT_ID" in data.columns:
+        data.rename(columns={"ACCOUNT_ID": "ACCOUNT_UID_AUX"}, inplace=True)
+        data["ACCOUNT_UID"] = data.apply(
+            lambda x: (
+                x["ACCOUNT_UID_AUX"]
+                if pd.isnull(x["ACCOUNT_UID"])
+                else x["ACCOUNT_UID"]
+            ),
+            axis=1,
+        )
+    # Rename the column RESOURCE_ID to RESOURCE_UID
+    if "RESOURCE_ID" in data.columns:
+        data.rename(columns={"RESOURCE_ID": "RESOURCE_UID_AUX"}, inplace=True)
+        data["RESOURCE_UID"] = data.apply(
+            lambda x: (
+                x["RESOURCE_UID_AUX"]
+                if pd.isnull(x["RESOURCE_UID"])
+                else x["RESOURCE_UID"]
+            ),
+            axis=1,
+        )
+    # Rename the column "SUBSCRIPTION" to "ACCOUNT_UID"
+    if "SUBSCRIPTION" in data.columns:
+        data.rename(columns={"SUBSCRIPTION": "ACCOUNT_UID_AUX"}, inplace=True)
+        data["ACCOUNT_UID"] = data.apply(
+            lambda x: (
+                x["ACCOUNT_UID_AUX"]
+                if pd.isnull(x["ACCOUNT_UID"])
+                else x["ACCOUNT_UID"]
+            ),
+            axis=1,
         )
 
-        table_div_header = html.Div(table_div_header, id="table-div-header")
+    # For the timestamp, remove the two columns and keep only the date
 
-        # Initializing the Dash App
-        dash.register_page(__name__, path="/")
-        # Create the layout
-        layout = create_layout_overview(
-            account_dropdown,
-            date_dropdown,
-            region_dropdown,
-            download_button_csv,
-            download_button_xlsx,
-            severity_dropdown,
-            service_dropdown,
-            table_row_dropdown,
-            status_dropdown,
-            table_div_header,
+    data["TIMESTAMP"] = pd.to_datetime(data["TIMESTAMP"])
+    data["ASSESSMENT_TIME"] = data["TIMESTAMP"].dt.strftime("%Y-%m-%d %H:%M:%S")
+    data_valid = pd.DataFrame()
+    for account in data["ACCOUNT_UID"].unique():
+        all_times = data[data["ACCOUNT_UID"] == account]["ASSESSMENT_TIME"].unique()
+        all_times.sort()
+        all_times = all_times[::-1]
+        times = []
+        # select the last ASSESSMENT_TIME in the day for each account
+        for time in all_times:
+            if time.split(" ")[0] not in [
+                times[i].split(" ")[0] for i in range(len(times))
+            ]:
+                times.append(time)
+        # select the data from the last ASSESSMENT_TIME of the day
+        data_valid = pd.concat(
+            [
+                data_valid,
+                data[
+                    (data["ACCOUNT_UID"] == account)
+                    & (data["ASSESSMENT_TIME"].isin(times))
+                ],
+            ]
         )
+    data = data_valid
+    # Select only the day in the data
+    data["ASSESSMENT_TIME"] = data["ASSESSMENT_TIME"].apply(lambda x: x.split(" ")[0])
+
+    data["TIMESTAMP"] = data["TIMESTAMP"].dt.strftime("%Y-%m-%d")
+    data["TIMESTAMP"] = pd.to_datetime(data["TIMESTAMP"])
+
+    # Assessment Date Dropdown
+    assesment_times = list(data["ASSESSMENT_TIME"].unique())
+    assesment_times.sort()
+    assesment_times.reverse()
+    date_dropdown = create_date_dropdown(assesment_times)
+
+    # Cloud Account Dropdown
+    accounts = []
+    if "ACCOUNT_NAME" in data.columns:
+        for account in data["ACCOUNT_NAME"].unique():
+            if "azure" in list(data[data["ACCOUNT_NAME"] == account]["PROVIDER"]):
+                accounts.append(account + " - AZURE")
+            if "gcp" in list(data[data["ACCOUNT_NAME"] == account]["PROVIDER"]):
+                accounts.append(account + " - GCP")
+
+    if "ACCOUNT_UID" in data.columns:
+        for account in data["ACCOUNT_UID"].unique():
+            if "aws" in list(data[data["ACCOUNT_UID"] == account]["PROVIDER"]):
+                accounts.append(account + " - AWS")
+            if "kubernetes" in list(data[data["ACCOUNT_UID"] == account]["PROVIDER"]):
+                accounts.append(account + " - K8S")
+
+    account_dropdown = create_account_dropdown(accounts)
+
+    # Region Dropdown
+    # Handle the case where there is location column
+    if "LOCATION" in data.columns:
+        data["REGION"] = data["LOCATION"]
+    # Handle the case where there is no region column
+    if "REGION" not in data.columns:
+        data["REGION"] = "-"
+    # Handle the case where the region is null
+    data["REGION"].fillna("-")
+    regions = ["All"] + list(data["REGION"].unique())
+    regions = [x for x in regions if str(x) != "nan" and x.__class__.__name__ == "str"]
+    # Correct the values
+    options = []
+    for value in regions:
+        if " " in value:
+            options.append(value.split(" ")[1])
+        else:
+            options.append(value)
+    regions = options
+    region_dropdown = create_region_dropdown(regions)
+
+    # Severity Dropdown
+    severity = ["All"] + list(data["SEVERITY"].unique())
+    severity = [
+        x for x in severity if str(x) != "nan" and x.__class__.__name__ == "str"
+    ]
+
+    severity_dropdown = create_severity_dropdown(severity)
+
+    # Service Dropdown
+    services = []
+    for service in data["SERVICE_NAME"].unique():
+        if "aws" in list(data[data["SERVICE_NAME"] == service]["PROVIDER"]):
+            services.append(service + " - AWS")
+        if "kubernetes" in list(data[data["SERVICE_NAME"] == service]["PROVIDER"]):
+            services.append(service + " - K8S")
+        if "azure" in list(data[data["SERVICE_NAME"] == service]["PROVIDER"]):
+            services.append(service + " - AZURE")
+        if "gcp" in list(data[data["SERVICE_NAME"] == service]["PROVIDER"]):
+            services.append(service + " - GCP")
+
+    services = ["All"] + services
+    services = [
+        x for x in services if str(x) != "nan" and x.__class__.__name__ == "str"
+    ]
+
+    service_dropdown = create_service_dropdown(services)
+
+    # Create the download button
+    download_button_csv = html.Button(
+        "Download this table as CSV",
+        id="download_link_csv",
+        n_clicks=0,
+        className="border-solid border-2 border-prowler-stone-900/10 hover:border-solid hover:border-2 hover:border-prowler-stone-900/10 text-prowler-stone-900 inline-block px-4 py-2 text-xs font-bold uppercase transition-all rounded-lg text-gray-900 hover:bg-prowler-stone-900/10 flex justify-end w-fit",
+    )
+    download_button_xlsx = html.Button(
+        "Download this table as XLSX",
+        id="download_link_xlsx",
+        n_clicks=0,
+        className="border-solid border-2 border-prowler-stone-900/10 hover:border-solid hover:border-2 hover:border-prowler-stone-900/10 text-prowler-stone-900 inline-block px-4 py-2 text-xs font-bold uppercase transition-all rounded-lg text-gray-900 hover:bg-prowler-stone-900/10 flex justify-end w-fit",
+    )
+
+    # Create the table row dropdown
+    table_row_values = [-1]
+    table_row_dropdown = create_table_row_dropdown(table_row_values)
+
+    # Create the status dropdown
+    status = ["All"] + list(data["STATUS"].unique())
+    status = [x for x in status if str(x) != "nan" and x.__class__.__name__ == "str"]
+
+    status_dropdown = create_status_dropdown(status)
+    table_div_header = []
+    table_div_header.append(
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Span(
+                            "Check Name",
+                            className="text-prowler-stone-900 uppercase text-sm xl:text-md font-bold",
+                        ),
+                        html.Button(
+                            html.Img(
+                                src="assets/images/icons/arrows.svg",
+                                style={
+                                    "width": "1rem",
+                                    "height": "1rem",
+                                    "margin-left": "0.2rem",
+                                    "margin-top": "0.2rem",
+                                },
+                            ),
+                            id="sort_button_check_name",
+                            n_clicks=0,
+                        ),
+                    ],
+                    className="w-[40.5%] 2xl:w-[71.5%]",
+                ),
+                html.Div(
+                    [
+                        html.Span(
+                            "Severity",
+                            className="text-prowler-stone-900 uppercase text-sm xl:text-md font-bold",
+                        ),
+                        html.Button(
+                            html.Img(
+                                src="assets/images/icons/arrows.svg",
+                                style={
+                                    "width": "1rem",
+                                    "height": "1rem",
+                                    "margin-left": "0.2rem",
+                                    "margin-top": "0.2rem",
+                                },
+                            ),
+                            id="sort_button_severity",
+                            n_clicks=0,
+                        ),
+                    ],
+                    className="w-[11%] 2xl:w-[15.5%]",
+                ),
+                html.Div(
+                    [
+                        html.Span(
+                            "Status",
+                            className="text-prowler-stone-900 uppercase text-sm xl:text-md font-bold",
+                        ),
+                        html.Button(
+                            html.Img(
+                                src="assets/images/icons/arrows.svg",
+                                style={
+                                    "width": "1rem",
+                                    "height": "1rem",
+                                    "margin-left": "0.2rem",
+                                    "margin-top": "0.2rem",
+                                },
+                            ),
+                            id="sort_button_status",
+                            n_clicks=0,
+                        ),
+                    ],
+                    className="w-[9%] 2xl:w-[12.5%]",
+                ),
+                html.Div(
+                    [
+                        html.Span(
+                            "Region",
+                            className="text-prowler-stone-900 uppercase text-sm xl:text-md font-bold",
+                        ),
+                        html.Button(
+                            html.Img(
+                                src="assets/images/icons/arrows.svg",
+                                style={
+                                    "width": "1rem",
+                                    "height": "1rem",
+                                    "margin-left": "0.2rem",
+                                    "margin-top": "0.2rem",
+                                },
+                            ),
+                            id="sort_button_region",
+                            n_clicks=0,
+                        ),
+                    ],
+                    className="w-[10%] 2xl:w-[14%]",
+                ),
+                html.Div(
+                    [
+                        html.Span(
+                            "Service",
+                            className="text-prowler-stone-900 uppercase text-sm xl:text-md font-bold",
+                        ),
+                        html.Button(
+                            html.Img(
+                                src="assets/images/icons/arrows.svg",
+                                style={
+                                    "width": "1rem",
+                                    "height": "1rem",
+                                    "margin-left": "0.2rem",
+                                    "margin-top": "0.2rem",
+                                },
+                            ),
+                            id="sort_button_service",
+                            n_clicks=0,
+                        ),
+                    ],
+                    className="w-[13.5%] 2xl:w-[14%]",
+                ),
+                html.Div(
+                    [
+                        html.Span(
+                            "Account",
+                            className="text-prowler-stone-900 uppercase text-sm xl:text-md font-bold",
+                        ),
+                        html.Button(
+                            html.Img(
+                                src="assets/images/icons/arrows.svg",
+                                style={
+                                    "width": "1rem",
+                                    "height": "1rem",
+                                    "margin-left": "0.2rem",
+                                    "margin-top": "0.2rem",
+                                },
+                            ),
+                            id="sort_button_account",
+                            n_clicks=0,
+                        ),
+                    ],
+                    className="w-[15%] 2xl:w-[15.5%]",
+                ),
+            ],
+            className="grid grid-cols-auto w-full",
+            style={
+                "display": "flex",
+            },
+        )
+    )
+
+    table_div_header = html.Div(table_div_header, id="table-div-header")
+
+    # Initializing the Dash App
+    dash.register_page(__name__, path="/")
+
+    # Create the layout
+    layout = create_layout_overview(
+        account_dropdown,
+        date_dropdown,
+        region_dropdown,
+        download_button_csv,
+        download_button_xlsx,
+        severity_dropdown,
+        service_dropdown,
+        table_row_dropdown,
+        status_dropdown,
+        table_div_header,
+    )
+
 
 # Callback to display selected value
 @callback(
@@ -468,8 +473,7 @@ else:
         Output("azure_card", "children"),
         Output("gcp_card", "children"),
         Output("k8s_card", "children"),
-        Output("subscribe_card", "children"),
-        Output("logout_btn", "children"),
+        Output("logout_card", "children"),
         Output("info-file-over", "title"),
         Output("severity-filter", "value"),
         Output("severity-filter", "options"),
@@ -1287,22 +1291,8 @@ def filter_data(
         "kubernetes", ks8_provider_logo, "Clusters", full_filtered_data
     )
 
-    # Subscribe to prowler SaaS card
-    subscribe_card = [
-        html.Div(
-            html.A(
-                [
-                    html.Img(src="assets/favicon.ico", className="w-5 mr-3"),
-                    html.Span("Subscribe to prowler SaaS"),
-                ],
-                href="https://prowler.pro/",
-                target="_blank",
-                className="text-prowler-stone-900 inline-flex px-4 py-2 text-xs font-bold uppercase transition-all rounded-lg text-gray-900 hover:bg-prowler-stone-900/10 border-solid border-1 hover:border-prowler-stone-900/10 hover:border-solid hover:border-1 border-prowler-stone-900/10",
-            ),
-        )
-    ]
-
-    logout_btn = [
+    # Logout card
+    logout_card = [
         html.Div(
             html.A(
                 [
@@ -1314,7 +1304,6 @@ def filter_data(
             ),
         )
     ]
-
     if (
         ctx.triggered_id == "download_link_csv"
         or ctx.triggered_id == "download_link_xlsx"
@@ -1344,8 +1333,7 @@ def filter_data(
             azure_card,
             gcp_card,
             k8s_card,
-            subscribe_card,
-            logout_btn,
+            logout_card,
             list_files,
             severity_values,
             severity_filter_options,
@@ -1376,8 +1364,7 @@ def filter_data(
             azure_card,
             gcp_card,
             k8s_card,
-            subscribe_card,
-            logout_btn,
+            logout_card,
             list_files,
             severity_values,
             severity_filter_options,

@@ -159,20 +159,20 @@ def update_nav_bar(pathname):
             ),
             html.Nav(
                 [
-                    html.A(
-                        [
-                            html.Span(
-                                [
-                                    html.Img(src="assets/favicon.ico", className="w-5"),
-                                    "Subscribe to prowler SaaS",
-                                ],
-                                className="flex items-center gap-x-3 text-white",
-                            ),
-                        ],
-                        href="https://prowler.com/",
-                        target="_blank",
-                        className="block p-3 uppercase text-xs hover:bg-prowler-stone-950 hover:border-r-4 hover:border-solid hover:border-prowler-lime",
-                    ),
+                    #FIX: page not found when try to implement logout button here 
+                    # html.A(
+                    #     [
+                    #         html.Span(
+                    #             [
+                    #                 html.Img(src="assets/favicon.ico", className="w-5"),
+                    #                 "Logout",
+                    #             ],
+                    #             className="flex items-center gap-x-3 text-white",
+                    #         ),
+                    #     ],
+                    #     href="http://127.0.0.1:11666/auth/logout/",
+                    #     className="block p-3 uppercase text-xs hover:bg-prowler-stone-950 hover:border-r-4 hover:border-solid hover:border-prowler-lime",
+                    # ),
                     html.Ul(generate_help_menu(), className=""),
                 ],
                 className="flex flex-col gap-y-6 mt-auto",
