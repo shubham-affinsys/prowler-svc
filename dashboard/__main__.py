@@ -83,7 +83,7 @@ def generate_help_menu():
         },
         {
             "title": "Docs",
-            "url": "https://docs.prowler.com",
+            "url": "https://docs.prowler.com/projects/prowler-open-source/en/latest/",
             "icon": "/assets/images/icons/docs.png",
         },
     ]
