@@ -54,9 +54,11 @@ def callback():
     session["user"] = auth0.parse_id_token(token, nonce=nonce)  # Parse user info
     user_info = session["user"]
     print(f"sesion details are: {session}")
+    
     #FIX : sensitive info may be logged
     # If the email domain is allowed, proceed to redirect to dashboard
     print(f"User logged in successfully ,user info : {user_info}", flush=True)
+    print(f"user token details: {token}")
     return redirect("/")  # Redirect to your dashboard
     # return redirect("https://prowler.bankbuddy.me")
 
