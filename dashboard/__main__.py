@@ -171,7 +171,7 @@ def update_nav_bar(pathname):
                                 className="flex items-center gap-x-3 text-white",
                             ),
                         ],
-                        href="https://prowler.bankbuddy.me/auth/logout",
+                        href="http://127.0.0.1:11666/auth/logout",
                         className="block p-3 uppercase text-xs hover:bg-prowler-stone-950 hover:border-r-4 hover:border-solid hover:border-prowler-lime",
                     ),
                     html.Ul(generate_help_menu(), className=""),
