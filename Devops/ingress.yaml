@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prowler-ingress
+  namespace: vault-poc
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-dev
+
+spec:
+  tls:
+  - hosts:
+     - prowler.bankbuddy.me
+    secretName: prowler-tls
+  ingressClassName: nginx
+  rules:
+  - host: "prowler.bankbuddy.me"
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service: 
+            name: prowler-dashboard-svc
+            port:
+              number: 11666

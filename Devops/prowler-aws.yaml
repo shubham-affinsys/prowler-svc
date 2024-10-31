@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: prowler-aws
+  namespace: vault-poc
+  labels:
+    app: prowler
+  annotations:
+    vault.hashicorp.com/agent-inject: "true"
+    vault.hashicorp.com/role: "aws-role"
+    vault.hashicorp.com/agent-inject-secret-credentials.txt: "aws/sts/deploy"
+    vault.hashicorp.com/agent-inject-template-credentials.txt: |
+      {{- with secret "aws/sts/deploy" -}}
+      export AWS_ACCESS_KEY_ID="{{ .Data.access_key }}"
+      export AWS_SECRET_ACCESS_KEY="{{ .Data.secret_key }}"
+      export AWS_SESSION_TOKEN="{{ .Data.session_token }}"
+      {{- end }}
+spec:
+  securityContext:
+     runAsUser: 1000
+     runAsGroup: 1000
+     fsGroup: 1000
+  serviceAccountName: default
+  containers:
+    - name: prowler
+      image: bankbuddy.azurecr.io/prowler:v3
+      command: ["/bin/bash", "-c"]
+      args:
+        - |
+          mkdir -p /prowler/output && \
+          source /vault/secrets/credentials.txt && \
+          prowler aws --compliance \
+            aws_account_security_onboarding_aws \
+            aws_foundational_security_best_practices_aws \
+            aws_foundational_technical_review_aws \
+            aws_well_architected_framework_reliability_pillar_aws \
+            aws_well_architected_framework_security_pillar_aws \
+            cis_3.0_aws \
+            cisa_aws \
+            hipaa_aws \
+            iso27001_2013_aws \
+            mitre_attack_aws \
+            pci_3.2.1_aws \
+            rbi_cyber_security_framework_aws \
+            soc2_aws \
+          --output-directory /prowler/output
+      volumeMounts:
+        - mountPath: /prowler/output
+          name: prowler-output
+  imagePullSecrets:
+      - name: regcred
+  volumes:
+    - name: prowler-output
+      persistentVolumeClaim:
+        claimName: prowler-output-pvc
+  restartPolicy: Never

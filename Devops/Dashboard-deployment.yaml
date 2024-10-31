@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prowler-dashboard
+  namespace: vault-poc
+  labels:
+    app: prowler-dashboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prowler-dashboard
+  template:
+    metadata:
+      labels:
+        app: prowler-dashboard
+    spec:
+      containers:
+      - name: prowler-dashboard
+        image: bankbuddy.azurecr.io/prowler:v3
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 11666
+        command: ["sh", "-c"]
+        env:
+        - name: HOST
+          value: "0.0.0.0"
+        args:
+          - |
+            prowler dashboard  
+        volumeMounts:
+        - mountPath: /prowler/output
+          name: prowler-output
+      imagePullSecrets:
+      - name: regcred
+      volumes:
+      - name: prowler-output
+        persistentVolumeClaim:
+          claimName: prowler-output-pvc
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: prowler-dashboard-svc
+  namespace: vault-poc
+spec:
+  selector:
+    app: prowler-dashboard
+  ports:
+    - protocol: TCP
+      port: 11666
+      targetPort: 11666
