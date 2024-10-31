@@ -2,9 +2,8 @@ import json
 from os import environ as env
 from urllib.parse import quote_plus, urlencode
 from authlib.integrations.flask_client import OAuth
-from flask import Blueprint, redirect, session, url_for, jsonify
-from werkzeug.exceptions import Unauthorized
-
+from flask import Blueprint, redirect, session, url_for, jsonify, flash
+from authlib.integrations.base_client.errors import OAuthError
 # Create a blueprint for authentication
 auth_bp = Blueprint('auth', __name__)
 
@@ -49,16 +48,28 @@ def login():
 @auth_bp.route("/callback", methods=["GET", "POST"])
 def callback():
     print("callback")
-    token = auth0.authorize_access_token()  # Fetch the OAuth token
-    nonce = session.pop('nonce', None)
-    session["user"] = auth0.parse_id_token(token, nonce=nonce)  # Parse user info
-    user_info = session["user"]
-    print(f"sesion details are: {session}")
-    #FIX : sensitive info may be logged
-    # If the email domain is allowed, proceed to redirect to dashboard
-    print(f"User logged in successfully ,user info : {user_info}", flush=True)
-    return redirect("/")  # Redirect to your dashboard
-    # return redirect("https://prowler.bankbuddy.me")
+    try:
+        token = auth0.authorize_access_token()  # Fetch the OAuth token
+        nonce = session.pop('nonce', None)
+        session["user"] = auth0.parse_id_token(token, nonce=nonce)  # Parse user info
+        user_info = session["user"]
+        # print(f"sesion details are: {session}")
+        # Check if the user is blocked
+        if user_info.get('blocked', False):
+            print(f"user blocked : {user_info.get('blocked')}")
+            flash('Your account has been blocked. Please contact support.', 'error')
+            return redirect(url_for('auth.login'))
+        
+        #FIX : sensitive info may be logged
+        # If the email domain
+        print(f"User logged in successfully ,user info : {user_info}", flush=True)
+        print(f"user token details: {token}")
+        return redirect("/")  # Redirect to your dashboard
+        # return redirect("https://prowler.bankbuddy.me")
+    except Exception as e:
+        print(f"OAuth error: {e}")
+        flash('Authentication failed. Please try again.', 'error')
+        return redirect(url_for('auth.login'))
 
 # Auth0 Logout
 @auth_bp.route("/logout")
