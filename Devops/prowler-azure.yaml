@@ -41,3 +41,50 @@ spec:
       persistentVolumeClaim:
         claimName: prowler-output-pvc
   restartPolicy: Never
+
+---
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: prowler-azure-scan
+  namespace: prowler
+  labels:
+    app: prowler
+  annotations:
+    vault.hashicorp.com/agent-inject: "true"  
+    vault.hashicorp.com/role: "azure-role"  
+    vault.hashicorp.com/agent-inject-secret-azurecredentials.txt: "secret/data/azure-secrets"
+    vault.hashicorp.com/agent-inject-template-azurecredentials.txt: |
+      {{- with secret "secret/data/azure-secrets" -}}
+      export AZURE_CLIENT_ID="{{ .Data.data.AZURE_CLIENT_ID }}"
+      export AZURE_TENANT_ID="{{ .Data.data.AZURE_TENANT_ID }}"
+      export AZURE_CLIENT_SECRET="{{ .Data.data.AZURE_CLIENT_SECRET }}"
+      {{- end }}
+spec:
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+  serviceAccountName: default
+  containers:
+    - name: prowler-azure
+      image: toniblyx/prowler:4.4.1
+      command: ["sh", "-c"]
+      args:
+        - |
+          mkdir -p /prowler/output && \
+          source /vault/secrets/azurecredentials.txt && \
+          prowler azure --sp-env-auth \
+          --output-directory /prowler/output
+          
+          
+      volumeMounts:
+        - mountPath: /prowler/output
+          name: prowler-output
+  volumes:
+    - name: prowler-output
+      persistentVolumeClaim:
+        claimName: prowler-output-pvc
+  restartPolicy: Never

@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: prowler-dashboard
-  namespace: vault-poc
+  namespace: prowler
   labels:
     app: prowler-dashboard
 spec:
@@ -45,7 +45,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: prowler-dashboard-svc
-  namespace: vault-poc
+  namespace: prowler
 spec:
   selector:
     app: prowler-dashboard

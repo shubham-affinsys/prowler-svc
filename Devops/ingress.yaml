@@ -2,7 +2,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: prowler-ingress
-  namespace: vault-poc
+  namespace: prowler
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-dev
 

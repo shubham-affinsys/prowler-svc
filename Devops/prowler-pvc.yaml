@@ -2,10 +2,11 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: prowler-output-pvc
-  namespace: vault-poc
+  namespace: prowler
 spec:
+  storageClassName: "gp2"
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
-      storage: 4Gi
+      storage: 10Gi

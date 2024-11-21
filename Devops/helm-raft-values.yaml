@@ -10,3 +10,13 @@ server:
 
   injector:
     enabled: true
+
+  dataStorage:
+    size: 4Gi
+    storageClass: gp2
+    accessMode: ReadWriteOnce
+
+  auditStorage:
+    size: 4Gi
+    storageClass: gp2
+    accessMode: ReadWriteOnce

@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Pod
 metadata:
   name: pvc-inspector
-  namespace: vault-poc
+  namespace: prowler
 spec:
   containers:
     - name: inspector
